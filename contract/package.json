@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "create-cosmos-app": "^2.3.3"
+  }
+}
