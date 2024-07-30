@@ -19,6 +19,7 @@
     "@emotion/react": "^11.13.0",
     "@emotion/styled": "^11.13.0",
     "@leapwallet/cosmos-social-login-capsule-provider": "^0.0.39",
+    "dotenv": "^16.4.5",
     "framer-motion": "^11.3.18",
     "graz": "^0.1.19",
     "node-stdlib-browser": "^1.2.0",
