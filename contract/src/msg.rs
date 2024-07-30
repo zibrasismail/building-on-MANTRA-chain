@@ -29,13 +29,6 @@ pub enum ExecuteMsg {
 #[cw_serde]
 #[derive(QueryResponses)]
 pub enum QueryMsg {
-    #[returns(EntryResponse)]
-    QueryEntry { id: u64 },
-    #[returns(ListResponse)]
-    QueryList {
-        start_after: Option<u64>,
-        limit: Option<u32>,
-    },
     #[returns(ListResponse)]
     QueryUserList { 
         user: String, 
@@ -45,14 +38,6 @@ pub enum QueryMsg {
 }
 
 // We define a custom struct for each query response
-#[cw_serde]
-pub struct EntryResponse {
-    pub id: u64,
-    pub description: String,
-    pub status: Status,
-    pub priority: Priority,
-    pub owner: String,
-}
 #[cw_serde]
 pub struct ListResponse {
     pub entries: Vec<Entry>,
