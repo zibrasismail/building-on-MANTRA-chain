@@ -462,6 +462,27 @@ export default function App() {
                                       >
                                         {todo.description}
                                       </Text>
+                                      <Spacer />
+                                      <IconButton
+                                        icon={<EditIcon />}
+                                        onClick={() => handleEditTodo(todo)}
+                                        size="sm"
+                                        colorScheme="teal"
+                                        variant="ghost"
+                                        mr={2}
+                                        aria-label="Edit todo"
+                                      />
+                                      <IconButton
+                                        icon={<DeleteIcon />}
+                                        onClick={() =>
+                                          handleDeleteTodo(todo.id)
+                                        }
+                                        size="sm"
+                                        colorScheme="red"
+                                        variant="ghost"
+                                        aria-label="Delete todo"
+                                        isLoading={loading}
+                                      />
                                     </>
                                   )}
                                 </Flex>
