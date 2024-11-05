@@ -8,7 +8,7 @@ use cw_storage_plus::Bound;
 use std::ops::Add;
 
 use crate::error::ContractError;
-use crate::msg::{ ExecuteMsg, InstantiateMsg, ListResponse, QueryMsg};
+use crate::msg::{ ExecuteMsg, InstantiateMsg, ListResponse, QueryMsg, EntryResponse};
 use crate::state::{Entry, Priority, Status, ENTRY_SEQ, LIST};
 
 // version info for migration
@@ -80,6 +80,12 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::QueryUserList { user, start_after, limit } => {
             to_binary(&query_user_list(deps, user, start_after, limit)?)
+        },
+        QueryMsg::QueryEntry { id } => {
+            to_binary(&query_entry(deps, id)?)
+        },
+        QueryMsg::QueryList { start_after, limit } => {
+            to_binary(&query_all_list(deps, start_after, limit)?)
         }
     }
 }
@@ -108,4 +114,84 @@ pub fn query_user_list(deps: Deps, user: String, start_after: Option<u64>, limit
         entries: entries?.into_iter().map(|(_, entry)| entry).collect(),
     };
     Ok(result)
+}
+
+pub fn execute_update_entry(
+    deps: DepsMut,
+    _info: MessageInfo,
+    id: u64,
+    description: Option<String>,
+    status: Option<Status>,
+    priority: Option<Priority>,
+    owner: String,
+) -> Result<Response, ContractError> {
+    let entry = LIST.load(deps.storage, id)?;
+    if owner != entry.owner {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    // Create a new task with the updated fields
+    let updated_entry = Entry {
+        id,
+        description: description.unwrap_or(entry.description),
+        status: status.unwrap_or(entry.status),
+        priority: priority.unwrap_or(entry.priority),
+        owner,
+    };
+
+    // Save the updated task to storage
+    LIST.save(deps.storage, id, &updated_entry)?;
+
+    // Return a success response with the updated task's ID
+    Ok(Response::new()
+        .add_attribute("method", "execute_update_entry")
+        .add_attribute("updated_entry_id", id.to_string()))
+}
+
+
+pub fn execute_delete_entry(
+    deps: DepsMut,
+    _info: MessageInfo,
+    id: u64,
+    owner: String,
+) -> Result<Response, ContractError> {
+    let entry = LIST.load(deps.storage, id)?;
+    if owner != entry.owner {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    // Remove the task from storage
+    LIST.remove(deps.storage, id);
+
+    // Return a success response with the deleted task's ID
+    Ok(Response::new()
+        .add_attribute("method", "execute_delete_entry")
+        .add_attribute("deleted_entry_id", id.to_string()))
+}
+
+// Add these query handler functions
+fn query_entry(deps: Deps, id: u64) -> StdResult<EntryResponse> {
+    let entry = LIST.load(deps.storage, id)?;
+    Ok(EntryResponse {
+        id: entry.id,
+        description: entry.description,
+        status: entry.status,
+        priority: entry.priority,
+        owner: entry.owner,
+    })
+}
+
+fn query_all_list(deps: Deps, start_after: Option<u64>, limit: Option<u32>) -> StdResult<ListResponse> {
+    let entries: Vec<Entry> = LIST
+        .range(
+            deps.storage,
+            start_after.map(Bound::exclusive),
+            None,
+            Order::Ascending,
+        )
+        .take(limit.unwrap_or(30) as usize)
+        .map(|item| item.map(|(_, entry)| entry))
+        .collect::<StdResult<_>>()?;
+
+    Ok(ListResponse { entries })
 }
